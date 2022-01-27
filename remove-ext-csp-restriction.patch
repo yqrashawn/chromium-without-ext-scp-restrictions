@@ -1,0 +1,58 @@
+diff --git a/extensions/common/csp_validator.cc b/extensions/common/csp_validator.cc
+index 803bcf1968..40c78ec7f3 100644
+--- a/extensions/common/csp_validator.cc
++++ b/extensions/common/csp_validator.cc
+@@ -743,7 +743,7 @@ bool DoesCSPDisallowRemoteCode(const std::string& content_security_policy,
+     }
+ 
+     if (!is_secure_directive(*mapping, error))
+-      return false;
++      return false || true;
+ 
+     DCHECK(mapping->directive);
+     secure_directives.insert(mapping->directive);
+diff --git a/extensions/common/manifest_handlers/csp_info.cc b/extensions/common/manifest_handlers/csp_info.cc
+index 77b351df61..3bf840943c 100644
+--- a/extensions/common/manifest_handlers/csp_info.cc
++++ b/extensions/common/manifest_handlers/csp_info.cc
+@@ -63,11 +63,22 @@ const char kDefaultPlatformAppContentSecurityPolicy[] =
+ 
+ const char* GetDefaultMV3CSP(absl::optional<bool> allow_wasm = absl::nullopt) {
+   // The default CSP to be used in order to prevent remote scripts.
+-  static const char kDefaultMV3CSP[] = "script-src 'self'; object-src 'self';";
++  static const char kDefaultMV3CSP[] =
++      "object-src 'self' 'unsafe-eval' 'unsafe-inline'; script-src 'self'  "
++      "'wasm-eval' 'unsafe-inline' 'unsafe-eval'; connect-src * data: blob: "
++      "filesystem:; style-src 'self' data: chrome-extension-resource: "
++      "'unsafe-eval' 'unsafe-inline'; frame-src 'self' http://localhost:* "
++      "data: chrome-extension-resource:; font-src 'self' data: "
++      "chrome-extension-resource:; media-src * data: blob: filesystem:;";
+ 
+   // Same as `kDefaultMV3CSP` but allows web assembly usage.
+   static const char kDefaultMV3CSPWithWasmAllowed[] =
+-      "script-src 'self' 'wasm-eval'; object-src 'self';";
++      "object-src 'self' 'unsafe-eval' 'unsafe-inline'; script-src 'self'  "
++      "'wasm-eval' 'unsafe-inline' 'unsafe-eval'; connect-src * data: blob: "
++      "filesystem:; style-src 'self' data: chrome-extension-resource: "
++      "'unsafe-eval' 'unsafe-inline'; frame-src 'self' http://localhost:* "
++      "data: chrome-extension-resource:; font-src 'self' data: "
++      "chrome-extension-resource:; media-src * data: blob: filesystem:;";
+ 
+   return allow_wasm.value_or(
+              base::FeatureList::IsEnabled(extensions_features::kAllowWasmInMV3))
+@@ -119,13 +130,12 @@ const char* GetDefaultExtensionPagesCSP(Extension* extension) {
+ CSPInfo::CSPInfo(std::string extension_pages_csp)
+     : extension_pages_csp(std::move(extension_pages_csp)) {}
+ 
+-CSPInfo::~CSPInfo() {
+-}
++CSPInfo::~CSPInfo() {}
+ 
+ // static
+ const std::string& CSPInfo::GetExtensionPagesCSP(const Extension* extension) {
+   CSPInfo* csp_info = static_cast<CSPInfo*>(
+-          extension->GetManifestData(keys::kContentSecurityPolicy));
++      extension->GetManifestData(keys::kContentSecurityPolicy));
+   return csp_info ? csp_info->extension_pages_csp : base::EmptyString();
+ }
+ 
